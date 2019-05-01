@@ -413,8 +413,12 @@
 1. <details><summary>电影管理</summary>
 
     ```shell
-    # 上传文件
+    # 上传文件的表单
+    ```
     1. <details><summary>建立电影管理表单 MovieForm: app/admin/forms.py</summary>
+
+        ```python
+        
     1. <details><summary>添加电影</summary>
     1. <details><summary>电影列表</summary>
 
