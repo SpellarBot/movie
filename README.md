@@ -19,9 +19,14 @@
     pipenv install packageName      # 安装库
     pipenv install pylint --dev     # --dev: 开发环境包
     pipenv graph                    # 查看已安装库
+    pipenv uninstall packageName    # 删除库
+    pipenv --where                  # 列出本地工程路径
+    pipenv --venv                   # 列出虚拟环境路径
+    pipenv --py                     # 列出虚拟环境的Python可执行文件
+    pipenv uninstall --all          # 卸载所有包
+    pipenv --rm                     # 删除虚拟环境
     pipenv lock -r --dev > requirements.txt    # 生成requirements.txt
     pipenv install -r requirements.txt         # 根据requirements.txt 安装库
-    pipenv uninstall packageName    # 删除库
 
 #### doc 项目开发文档
     环境、初始化建库表
