@@ -28,6 +28,7 @@ LINK = "mysql+%s://%s:%s@%s:%s/%s?%s" \
         
 class BaseConfig(object):
     DB = 'movie'  # 数据库需要预先在mysql建立
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = LINK
     SQLALCHEMY_POOL_SIZE = 5
     SQLALCHEMY_POOL_TIMEOUT = 30

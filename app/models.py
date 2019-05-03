@@ -1,6 +1,6 @@
 #coding:utf8
 from datetime import datetime
-from . import db
+from app import db
 
 class Auth(db.Model):
     """权限"""

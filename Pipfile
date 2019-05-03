@@ -12,6 +12,7 @@ pymysql = "*"
 mysql-connector = "*"
 flask-wtf = "*"
 flask = "*"
+ipdb = "*"
 
 [requires]
 python_version = "3.7"

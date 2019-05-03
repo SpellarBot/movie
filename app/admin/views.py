@@ -1,10 +1,20 @@
 #coding:utf8
 from app.admin import admin
 from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm
-from app.models import Admin, Tag
+from app.admin.forms import LoginForm, TagForm, MovieForm
+from app.models import Admin, Tag, Movie
 from functools import wraps
-from app import db
+from app import db, app
+from werkzeug.utils import secure_filename
+import os, datetime, uuid     
+import ipdb
+
+# werkzeug安全文件名工具
+def change_filename(filename):
+    _filename = os.path.splitext(filename)
+    filename = datetime.datetime.now().strftime("%Y%m%d%H%M%S")+str(uuid.uuid4().hex)+_filename[-1]
+    return filename
+
 
 # admin访问控制 
 def admin_login_req(func):
@@ -14,6 +24,7 @@ def admin_login_req(func):
             return redirect(url_for("admin.login", next=request.url))
         return func(*args, **kwargs)
     return inner_func
+
 
 @admin.route("/")
 @admin_login_req                                    # 添加admin访问控制
@@ -59,6 +70,35 @@ def tag_add():
         return redirect(url_for("admin.tag_list", page=1))  # 跳转到标签列表（必须指定page）
     return render_template("admin/tag_add.html", form=form)
 
+# 编辑标签
+@admin.route("/tag/edit/<int:id>", methods=["GET", "POST"])
+@admin_login_req
+def tag_edit(id=None):
+    form = TagForm()
+    tag = Tag.query.filter_by(id=id).first()
+    if form.validate_on_submit():
+        data = form.data
+        tag_count = Tag.query.filter_by(name=data["name"]).count()
+        if data["name"] == tag.name or tag_count == 1:
+            flash("名称重复", "err")
+            return redirect(url_for("admin.tag_edit", id=id))
+        tag.name = data["name"]
+        db.session.add(tag)
+        db.session.commit()
+        flash("成功修改标签", "ok")
+        return redirect(url_for("admin.tag_list", page=1))
+    return render_template("admin/tag_edit.html", form=form)
+
+# 标签删除
+@admin.route("/tag/del/<int:id>", methods=["GET", "POST"])
+@admin_login_req
+def tag_del(id=None):
+    tag = Tag.query.filter_by(id=id).first()
+    db.session.delete(tag)
+    db.session.commit()
+    flash("成功删除标签", "ok")
+    return redirect(url_for("admin.tag_list", page=1))
+
 # 标签列表
 @admin.route("/tag/list/<int:page>/", methods=["GET"])    # 指定路由规则 整型的page参数
 @admin_login_req
@@ -66,15 +106,45 @@ def tag_list(page=None):
     if page is None: 
         page = 1
     page_data = Tag.query.order_by(
-        Tag.id                    # 按时间反序：Tag.ctime.desc() 
-    ).paginate(page=page, per_page=2)       # 分页数量
+        Tag.id                    # 也可按时间反序：Tag.ctime.desc() 
+    ).paginate(page=page, per_page=4)       # 分页数量
     return render_template("admin/tag_list.html", page_data=page_data)
 
+
 # 添加电影
-@admin.route("/movie/add/")
+@admin.route("/movie/add/", methods=["GET", "POST"])
 @admin_login_req
 def movie_add():
-    return render_template("admin/movie_add.html")
+    form = MovieForm()
+    if form.validate_on_submit():
+        data = form.data
+        
+        file_url = secure_filename(form.url.data.filename)   # werkzeu工具安全文件名
+        url = change_filename(file_url)
+        form.url.data.save(app.config["UP_DIR"]+url)  # 保存文件操作
+        file_logo = secure_filename(form.logo.data.filename)        
+        logo = change_filename(file_logo)        
+        form.logo.data.save(app.config["UP_DIR"]+logo)  # 保存文件操作
+        
+        movie = Movie(
+            title=data["title"],
+            url=url,
+            logo=logo,
+            info=data["info"],
+            star=data["star"],
+            playnum=0,
+            commentnum=0,
+            tag_id=data["tag_id"],
+            area=data["area"],
+            release_time=data["release_time"],
+            length=data["length"]
+        )
+        db.session.add(movie)
+        db.session.commit()
+        flash("电影添加成功", "ok")
+        return redirect(url_for("admin.movie_add"))
+    return render_template("admin/movie_add.html", form=form)
+
 
 # 电影列表
 @admin.route("/movie/list/")
