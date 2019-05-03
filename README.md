@@ -11,6 +11,7 @@
     git add .                       # 添加文件
     git commit -m "msg"             # 提交； -m: message
     git push -u origin master       # 同步
+    echo "uploads/" >> .gitignore   # 添加忽略例外； 把uploads目录上传例外
 
 #### python 虚拟环境：pipenv:
     # python3
