@@ -1,8 +1,8 @@
 #coding:utf8
 from app.admin import admin
 from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm, MovieForm
-from app.models import Admin, Tag, Movie
+from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm
+from app.models import Admin, Tag, Movie, Preview
 from functools import wraps
 from app import db, app
 from werkzeug.utils import secure_filename
@@ -119,7 +119,6 @@ def movie_add():
     if form.validate_on_submit():
         data = form.data
         if not os.path.exists(app.config["UP_DIR"]):    # 创建“上传文件夹”
-            print("create %s"% app.config["UP_DIR"])
             os.makedirs(app.config["UP_DIR"])    # 创建目录
             os.chmod(app.config["UP_DIR"], 644)  # 授权 r=4, w=2, r=1  # os.chmod(app.config["UP_DIR"], 'rw')                
 
@@ -162,16 +161,41 @@ def movie_list(page=None):
     return render_template("admin/movie_list.html", page_data=page_data)
 
 # 添加预告
-@admin.route("/preview/add/")
+@admin.route("/preview/add/", methods=["GET", "POST"])
 @admin_login_req
 def preview_add():
-    return render_template("admin/preview_add.html")
+    form = PreviewForm()
+    if form.validate_on_submit():
+        data = form.data
+        preview_count = Preview.query.filter_by(title=data["title"]).count()
+        if preview_count == 1:
+            flash("预告已存在！", "err")
+            return redirect(url_for("preview_add"))
+        
+        if not os.path.exists(app.config["UP_DIR"]):    # 创建“上传文件夹”
+            os.makedirs(app.config["UP_DIR"])    # 创建目录
+            os.chmod(app.config["UP_DIR"], 644)  # 授权 r=4, w=2, r=1  # os.chmod(app.config["UP_DIR"], 'rw')                
+        file_logo = secure_filename(form.logo.data.filename)
+        logo = change_filename(file_logo)
+        form.logo.data.save(app.config["UP_DIR"]+logo)
+        
+        preview = Preview(title=data["title"], logo=logo)
+        db.session.add(preview)
+        db.session.commit()
+        flash("成功添加预告！", "ok")
+        return redirect(url_for("admin.preview_list", page=1))
+    return render_template("admin/preview_add.html" ,form=form)
 
 # 预告列表
-@admin.route("/preview/list/")
+@admin.route("/preview/list/<int:page>")
 @admin_login_req
-def preview_list():
-    return render_template("admin/preview_list.html")
+def preview_list(page=None):
+    if page == None: page = 1
+    page_data = Preview.query.order_by(
+        Preview.id
+    ).paginate(page=page, per_page=2)
+    return render_template("admin/preview_list.html", page_data=page_data)
+
 
 # 用户列表
 @admin.route("/user/list/")

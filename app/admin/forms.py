@@ -6,6 +6,16 @@ from wtforms.validators import DataRequired, ValidationError
 from app.models import Admin, Tag
 
 
+class PreviewForm(FlaskForm):
+    """预告管理表单"""
+    title = StringField(
+        "预告标题",
+        validators=[DataRequired("请输入预告标题！")],
+        render_kw={"class": "form-control", "id": "input_title", "placeholder": "请输入片名！"}
+    )
+    logo = FileField("预告封面", validators=[DataRequired("请输入预告封面!")])
+    submit = SubmitField("提交预告", render_kw={"class": "btn btn-primary"})
+
 tags = Tag.query.all()
 class MovieForm(FlaskForm):
     """电影管理表单"""
@@ -111,7 +121,7 @@ class MovieForm(FlaskForm):
     submit = SubmitField(
         '提交',
         render_kw={
-            "class": "btn btn-primary btn-block btn-flat",  # 前端样式 
+            "class": "btn btn-primary",  # 前端样式 
         }
     )
 
