@@ -118,7 +118,11 @@ def movie_add():
     form = MovieForm()
     if form.validate_on_submit():
         data = form.data
-        
+        if not os.path.exists(app.config["UP_DIR"]):    # 创建“上传文件夹”
+            print("create %s"% app.config["UP_DIR"])
+            os.makedirs(app.config["UP_DIR"])    # 创建目录
+            os.chmod(app.config["UP_DIR"], 644)  # 授权 r=4, w=2, r=1  # os.chmod(app.config["UP_DIR"], 'rw')                
+
         file_url = secure_filename(form.url.data.filename)   # werkzeu工具安全文件名
         url = change_filename(file_url)
         form.url.data.save(app.config["UP_DIR"]+url)  # 保存文件操作
@@ -131,10 +135,10 @@ def movie_add():
             url=url,
             logo=logo,
             info=data["info"],
-            star=data["star"],
+            star=int(data["star"]),
             playnum=0,
             commentnum=0,
-            tag_id=data["tag_id"],
+            tag_id=int(data["tag_id"]),
             area=data["area"],
             release_time=data["release_time"],
             length=data["length"]
@@ -142,15 +146,20 @@ def movie_add():
         db.session.add(movie)
         db.session.commit()
         flash("电影添加成功", "ok")
-        return redirect(url_for("admin.movie_add"))
+        return redirect(url_for("admin.movie_list", page=1))
     return render_template("admin/movie_add.html", form=form)
 
 
 # 电影列表
-@admin.route("/movie/list/")
+@admin.route("/movie/list/<int:page>/", methods=["GET", "POST"])
 @admin_login_req
-def movie_list():
-    return render_template("admin/movie_list.html")
+def movie_list(page=None):
+    if page is None:
+        page = 1
+    page_data = Movie.query.order_by(
+        Movie.id
+    ).paginate(page=page, per_page=2)
+    return render_template("admin/movie_list.html", page_data=page_data)
 
 # 添加预告
 @admin.route("/preview/add/")
